@@ -1,5 +1,10 @@
 BUILD_DIR=build
-include $(N64_INST)/include/n64.mk
+ifdef SystemRoot
+include $(N64_INST)\include\crossplatform.mk
+else
+include $(N64_INST)/include/crossplatform.mk
+endif
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 OBJS = $(BUILD_DIR)/audioplayer.o
 
@@ -48,7 +53,7 @@ audioplayer.z64: N64_ROM_TITLE="Audio Player"
 audioplayer.z64: $(BUILD_DIR)/audioplayer.dfs
 
 clean:
-	rm -rf $(BUILD_DIR) audioplayer.z64
+	$(RM) $(BUILD_DIR) audioplayer.z64
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 

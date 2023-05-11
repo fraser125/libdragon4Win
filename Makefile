@@ -1,3 +1,21 @@
+ifdef SystemRoot
+FIXPATH = $(subst /,\,$1)
+RM = -del /Q
+RMF = -rd /Q /S
+MD = -md
+SENDNULL = 2> nul
+SENDNULLALL = > nul 1> nul 2> nul
+MV = copy
+else
+FIXPATH = $1
+RM = rm -f
+RMF = rm -rf
+MD = mkdir -p
+MV = mv
+SENDNULL = 
+SENDNULLALL = 
+endif
+
 all: libdragon
 
 V = 1  # force verbose (at least until we have converted all sub-Makefiles)
@@ -6,26 +24,24 @@ BUILD_DIR = build
 include n64.mk
 INSTALLDIR = $(N64_INST)
 
-LIBDRAGON_CFLAGS = -I$(CURDIR)/src -I$(CURDIR)/include -ffile-prefix-map=$(CURDIR)=libdragon
-
 # Activate N64 toolchain for libdragon build
 libdragon: CC=$(N64_CC)
 libdragon: AS=$(N64_AS)
 libdragon: LD=$(N64_LD)
-libdragon: CFLAGS+=$(N64_CFLAGS) $(LIBDRAGON_CFLAGS)
-libdragon: ASFLAGS+=$(N64_ASFLAGS) $(LIBDRAGON_CFLAGS)
-libdragon: RSPASFLAGS+=$(N64_RSPASFLAGS) $(LIBDRAGON_CFLAGS)
+libdragon: CFLAGS+=$(N64_CFLAGS) -I$(call FIXPATH, $(CURDIR)/src) -I$(call FIXPATH, $(CURDIR)/include) 
+libdragon: ASFLAGS+=$(N64_ASFLAGS) -I$(call FIXPATH, $(CURDIR)/src) -I$(call FIXPATH, $(CURDIR)/include)
+libdragon: RSPASFLAGS+=$(N64_RSPASFLAGS) -I$(call FIXPATH, $(CURDIR)/src) -I$(call FIXPATH, $(CURDIR)/include)
 libdragon: LDFLAGS+=$(N64_LDFLAGS)
 libdragon: libdragon.a libdragonsys.a
 
 libdragonsys.a: $(BUILD_DIR)/system.o
 	@echo "    [AR] $@"
-	$(N64_AR) -rcs -o $@ $^
+	@$(N64_AR) -rcs -o $(call FIXPATH,$@) $(call FIXPATH,$^)
 
-libdragon.a: $(BUILD_DIR)/n64sys.o $(BUILD_DIR)/interrupt.o $(BUILD_DIR)/backtrace.o \
+libdragon.a: $(BUILD_DIR)/n64sys.o $(BUILD_DIR)/interrupt.o \
 			 $(BUILD_DIR)/inthandler.o $(BUILD_DIR)/entrypoint.o \
 			 $(BUILD_DIR)/debug.o $(BUILD_DIR)/usb.o $(BUILD_DIR)/fatfs/ff.o \
-			 $(BUILD_DIR)/fatfs/ffunicode.o $(BUILD_DIR)/rompak.o $(BUILD_DIR)/dragonfs.o \
+			 $(BUILD_DIR)/fatfs/ffunicode.o $(BUILD_DIR)/dragonfs.o \
 			 $(BUILD_DIR)/audio.o $(BUILD_DIR)/display.o $(BUILD_DIR)/surface.o \
 			 $(BUILD_DIR)/console.o $(BUILD_DIR)/joybus.o \
 			 $(BUILD_DIR)/controller.o $(BUILD_DIR)/rtc.o \
@@ -39,9 +55,9 @@ libdragon.a: $(BUILD_DIR)/n64sys.o $(BUILD_DIR)/interrupt.o $(BUILD_DIR)/backtra
 			 $(BUILD_DIR)/audio/xm64.o $(BUILD_DIR)/audio/libxm/play.o \
 			 $(BUILD_DIR)/audio/libxm/context.o $(BUILD_DIR)/audio/libxm/load.o \
 			 $(BUILD_DIR)/audio/ym64.o $(BUILD_DIR)/audio/ay8910.o \
-			 $(BUILD_DIR)/rspq/rspq.o $(BUILD_DIR)/rspq/rsp_queue.o
+			 $(BUILD_DIR)/rspq/rspq.o $(BUILD_DIR)/rspq/rsp_queue.o 
 	@echo "    [AR] $@"
-	$(N64_AR) -rcs -o $@ $^
+	@$(N64_AR) -rcs -o $@ $(call FIXPATH,$^)
 
 examples:
 	$(MAKE) -C examples
@@ -67,66 +83,64 @@ tools-clean:
 	$(MAKE) -C tools clean
 
 install-mk: n64.mk
-	install -Cv -m 0644 n64.mk $(INSTALLDIR)/include/n64.mk
+	install -Cv -m 0644 n64.mk $(call FIXPATH, $(INSTALLDIR)/include/n64.mk)
 
 install: install-mk libdragon
-	install -Cv -m 0644 libdragon.a $(INSTALLDIR)/mips64-elf/lib/libdragon.a
-	install -Cv -m 0644 n64.ld $(INSTALLDIR)/mips64-elf/lib/n64.ld
-	install -Cv -m 0644 rsp.ld $(INSTALLDIR)/mips64-elf/lib/rsp.ld
-	install -Cv -m 0644 header $(INSTALLDIR)/mips64-elf/lib/header
-	install -Cv -m 0644 libdragonsys.a $(INSTALLDIR)/mips64-elf/lib/libdragonsys.a
-	install -Cv -m 0644 include/n64types.h $(INSTALLDIR)/mips64-elf/include/n64types.h
-	install -Cv -m 0644 include/pputils.h $(INSTALLDIR)/mips64-elf/include/pputils.h
-	install -Cv -m 0644 include/n64sys.h $(INSTALLDIR)/mips64-elf/include/n64sys.h
-	install -Cv -m 0644 include/backtrace.h $(INSTALLDIR)/mips64-elf/include/backtrace.h
-	install -Cv -m 0644 include/cop0.h $(INSTALLDIR)/mips64-elf/include/cop0.h
-	install -Cv -m 0644 include/cop1.h $(INSTALLDIR)/mips64-elf/include/cop1.h
-	install -Cv -m 0644 include/interrupt.h $(INSTALLDIR)/mips64-elf/include/interrupt.h
-	install -Cv -m 0644 include/dma.h $(INSTALLDIR)/mips64-elf/include/dma.h
-	install -Cv -m 0644 include/dragonfs.h $(INSTALLDIR)/mips64-elf/include/dragonfs.h
-	install -Cv -m 0644 include/audio.h $(INSTALLDIR)/mips64-elf/include/audio.h
-	install -Cv -m 0644 include/surface.h $(INSTALLDIR)/mips64-elf/include/surface.h
-	install -Cv -m 0644 include/display.h $(INSTALLDIR)/mips64-elf/include/display.h
-	install -Cv -m 0644 include/debug.h $(INSTALLDIR)/mips64-elf/include/debug.h
-	install -Cv -m 0644 include/usb.h $(INSTALLDIR)/mips64-elf/include/usb.h
-	install -Cv -m 0644 include/console.h $(INSTALLDIR)/mips64-elf/include/console.h
-	install -Cv -m 0644 include/joybus.h $(INSTALLDIR)/mips64-elf/include/joybus.h
-	install -Cv -m 0644 include/mempak.h $(INSTALLDIR)/mips64-elf/include/mempak.h
-	install -Cv -m 0644 include/controller.h $(INSTALLDIR)/mips64-elf/include/controller.h
-	install -Cv -m 0644 include/rtc.h $(INSTALLDIR)/mips64-elf/include/rtc.h
-	install -Cv -m 0644 include/eeprom.h $(INSTALLDIR)/mips64-elf/include/eeprom.h
-	install -Cv -m 0644 include/eepromfs.h $(INSTALLDIR)/mips64-elf/include/eepromfs.h
-	install -Cv -m 0644 include/tpak.h $(INSTALLDIR)/mips64-elf/include/tpak.h
-	install -Cv -m 0644 include/graphics.h $(INSTALLDIR)/mips64-elf/include/graphics.h
-	install -Cv -m 0644 include/rdp.h $(INSTALLDIR)/mips64-elf/include/rdp.h
-	install -Cv -m 0644 include/rsp.h $(INSTALLDIR)/mips64-elf/include/rsp.h
-	install -Cv -m 0644 include/timer.h $(INSTALLDIR)/mips64-elf/include/timer.h
-	install -Cv -m 0644 include/exception.h $(INSTALLDIR)/mips64-elf/include/exception.h
-	install -Cv -m 0644 include/system.h $(INSTALLDIR)/mips64-elf/include/system.h
-	install -Cv -m 0644 include/dir.h $(INSTALLDIR)/mips64-elf/include/dir.h
-	install -Cv -m 0644 include/libdragon.h $(INSTALLDIR)/mips64-elf/include/libdragon.h
-	install -Cv -m 0644 include/ucode.S $(INSTALLDIR)/mips64-elf/include/ucode.S
-	install -Cv -m 0644 include/rsp.inc $(INSTALLDIR)/mips64-elf/include/rsp.inc
-	install -Cv -m 0644 include/rsp_dma.inc $(INSTALLDIR)/mips64-elf/include/rsp_dma.inc
-	install -Cv -m 0644 include/rsp_assert.inc $(INSTALLDIR)/mips64-elf/include/rsp_assert.inc
-	install -Cv -m 0644 include/mixer.h $(INSTALLDIR)/mips64-elf/include/mixer.h
-	install -Cv -m 0644 include/samplebuffer.h $(INSTALLDIR)/mips64-elf/include/samplebuffer.h
-	install -Cv -m 0644 include/wav64.h $(INSTALLDIR)/mips64-elf/include/wav64.h
-	install -Cv -m 0644 include/xm64.h $(INSTALLDIR)/mips64-elf/include/xm64.h
-	install -Cv -m 0644 include/ym64.h $(INSTALLDIR)/mips64-elf/include/ym64.h
-	install -Cv -m 0644 include/ay8910.h $(INSTALLDIR)/mips64-elf/include/ay8910.h
-	install -Cv -m 0644 include/rspq.h $(INSTALLDIR)/mips64-elf/include/rspq.h
-	install -Cv -m 0644 include/rspq_constants.h $(INSTALLDIR)/mips64-elf/include/rspq_constants.h
-	install -Cv -m 0644 include/rsp_queue.inc $(INSTALLDIR)/mips64-elf/include/rsp_queue.inc
-	mkdir -p $(INSTALLDIR)/mips64-elf/include/fatfs
-	install -Cv -m 0644 src/fatfs/diskio.h $(INSTALLDIR)/mips64-elf/include/fatfs/diskio.h
-	install -Cv -m 0644 src/fatfs/ff.h $(INSTALLDIR)/mips64-elf/include/fatfs/ff.h
-	install -Cv -m 0644 src/fatfs/ffconf.h $(INSTALLDIR)/mips64-elf/include/fatfs/ffconf.h
+	install -Cv -m 0644 libdragon.a $(call FIXPATH, $(INSTALLDIR)/mips64-elf/lib/libdragon.a)
+	install -Cv -m 0644 n64.ld $(call FIXPATH, $(INSTALLDIR)/mips64-elf/lib/n64.ld)
+	install -Cv -m 0644 rsp.ld $(call FIXPATH, $(INSTALLDIR)/mips64-elf/lib/rsp.ld)
+	install -Cv -m 0644 header $(call FIXPATH, $(INSTALLDIR)/mips64-elf/lib/header)
+	install -Cv -m 0644 libdragonsys.a $(call FIXPATH, $(INSTALLDIR)/mips64-elf/lib/libdragonsys.a)
+	install -Cv -m 0644 $(call FIXPATH, include/audio.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/audio.h)
+	install -Cv -m 0644 $(call FIXPATH, include/ay8910.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/ay8910.h)
+	install -Cv -m 0644 $(call FIXPATH, include/backtrace.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/backtrace.h)
+	install -Cv -m 0644 $(call FIXPATH, include/console.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/console.h)
+	install -Cv -m 0644 $(call FIXPATH, include/controller.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/controller.h)
+	install -Cv -m 0644 $(call FIXPATH, include/cop0.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/cop0.h)
+	install -Cv -m 0644 $(call FIXPATH, include/cop1.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/cop1.h)
+	install -Cv -m 0644 $(call FIXPATH, include/debug.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/debug.h)
+	install -Cv -m 0644 $(call FIXPATH, include/display.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/display.h)
+	install -Cv -m 0644 $(call FIXPATH, include/dir.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/dir.h)
+	install -Cv -m 0644 $(call FIXPATH, include/dma.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/dma.h)
+	install -Cv -m 0644 $(call FIXPATH, include/dragonfs.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/dragonfs.h)
+	install -Cv -m 0644 $(call FIXPATH, include/eeprom.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/eeprom.h)
+	install -Cv -m 0644 $(call FIXPATH, include/eepromfs.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/eepromfs.h)
+	install -Cv -m 0644 $(call FIXPATH, include/exception.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/exception.h)
+	install -Cv -m 0644 $(call FIXPATH, include/graphics.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/graphics.h)
+	install -Cv -m 0644 $(call FIXPATH, include/interrupt.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/interrupt.h)
+	install -Cv -m 0644 $(call FIXPATH, include/joybus.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/joybus.h)
+	install -Cv -m 0644 $(call FIXPATH, include/libdragon.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/libdragon.h)
+	install -Cv -m 0644 $(call FIXPATH, include/mempak.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/mempak.h)
+	install -Cv -m 0644 $(call FIXPATH, include/mixer.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/mixer.h)
+	install -Cv -m 0644 $(call FIXPATH, include/n64sys.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/n64sys.h)
+	install -Cv -m 0644 $(call FIXPATH, include/n64types.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/n64types.h)
+	install -Cv -m 0644 $(call FIXPATH, include/pputils.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/pputils.h)
+	install -Cv -m 0644 $(call FIXPATH, include/rdp.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rdp.h)
+	install -Cv -m 0644 $(call FIXPATH, include/rsp.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rsp.h)
+	install -Cv -m 0644 $(call FIXPATH, include/rsp.inc) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rsp.inc)
+	install -Cv -m 0644 $(call FIXPATH, include/rsp_assert.inc) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rsp_assert.inc)
+	install -Cv -m 0644 $(call FIXPATH, include/rsp_dma.inc) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rsp_dma.inc)
+	install -Cv -m 0644 $(call FIXPATH, include/rsp_queue.inc) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rsp_queue.inc)
+	install -Cv -m 0644 $(call FIXPATH, include/rspq.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rspq.h)
+	install -Cv -m 0644 $(call FIXPATH, include/rspq_constants.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rspq_constants.h)
+	install -Cv -m 0644 $(call FIXPATH, include/rtc.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/rtc.h)
+	install -Cv -m 0644 $(call FIXPATH, include/samplebuffer.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/samplebuffer.h)
+	install -Cv -m 0644 $(call FIXPATH, include/surface.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/surface.h)
+	install -Cv -m 0644 $(call FIXPATH, include/system.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/system.h)
+	install -Cv -m 0644 $(call FIXPATH, include/timer.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/timer.h)
+	install -Cv -m 0644 $(call FIXPATH, include/tpak.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/tpak.h)
+	install -Cv -m 0644 $(call FIXPATH, include/ucode.S) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/ucode.S)
+	install -Cv -m 0644 $(call FIXPATH, include/usb.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/usb.h)
+	install -Cv -m 0644 $(call FIXPATH, include/wav64.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/wav64.h)
+	install -Cv -m 0644 $(call FIXPATH, include/xm64.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/xm64.h)
+	install -Cv -m 0644 $(call FIXPATH, include/ym64.h) $(call FIXPATH, $(INSTALLDIR)/mips64-elf/include/ym64.h)
+
 
 
 clean:
-	rm -f *.o *.a
-	rm -rf $(CURDIR)/build
+	$(RM) *.o $(SENDNULL)
+	$(RM) *.a $(SENDNULL)
+	$(RMF) $(call FIXPATH, $(CURDIR)/build)
 
 test:
 	$(MAKE) -C tests
