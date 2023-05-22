@@ -21,8 +21,6 @@ CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O2 -Wall -Werror -I$(ROOTDIR)/m
 LDFLAGS = -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 1M -h $(ROOTDIR)/mips64-elf/lib/header -t "VRU Test"
 
-include $(call FIXPATH,$(N64_INST)/include/n64.mk)
-
 ifeq ($(N64_BYTE_SWAP),true)
 $(PROG_NAME).v64: $(PROG_NAME).z64
 	dd conv=swab if=$^ of=$@

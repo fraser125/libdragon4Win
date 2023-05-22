@@ -3,7 +3,7 @@ include $(N64_INST)\include\crossplatform.mk
 else
 include $(N64_INST)/include/crossplatform.mk
 endif
-include $(call FIXPATH,$(N64_INST)/include/n64.mk)
+# include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 PROG_NAME = mputest
 

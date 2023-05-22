@@ -4,8 +4,8 @@ else
 include $(N64_INST)/include/crossplatform.mk
 endif
 
-
 PROG_NAME = mptest
+# include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 ROOTDIR = $(N64_INST)
 GCCN64PREFIX = $(ROOTDIR)/bin/mips64-elf-
@@ -21,7 +21,6 @@ ASFLAGS = -mtune=vr4300 -march=vr4300
 CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O2 -Wall -Werror -I$(ROOTDIR)/mips64-elf/include
 LDFLAGS = -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 1M -h $(ROOTDIR)/mips64-elf/lib/header -t "Mempak Test"
-include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 ifeq ($(N64_BYTE_SWAP),true)
 $(PROG_NAME).v64: $(PROG_NAME).z64
