@@ -69,21 +69,25 @@ N64_CFLAGS += -std=gnu99
 %.z64: CXXFLAGS+=$(N64_CXXFLAGS)
 %.z64: ASFLAGS+=$(N64_ASFLAGS)
 %.z64: RSPASFLAGS+=$(N64_RSPASFLAGS)
-%.z64: LDFLAGS+=$(N64_LDFLAGS)
+%.z64: LDFLAGS=$(N64_LDFLAGS)
 %.z64: $(BUILD_DIR)/%.elf
-	@echo "    [Z64] $@"
-	$(N64_OBJCOPY) -O binary $< $<.bin
-	@rm -f $@
-	DFS_FILE="$(filter %.dfs, $^)"; \
-	if [ -z "$$DFS_FILE" ]; then \
-		$(N64_TOOL) $(N64_TOOLFLAGS) --output $@ $<.bin; \
-	else \
-		$(N64_TOOL) $(N64_TOOLFLAGS) --output $@ $<.bin --offset $(N64_DFS_OFFSET) "$$DFS_FILE"; \
-	fi
-	if [ ! -z "$(strip $(N64_ED64ROMCONFIGFLAGS))" ]; then \
-		$(N64_ED64ROMCONFIG) $(N64_ED64ROMCONFIGFLAGS) $@; \
-	fi
-	$(N64_CHKSUM) $@ >/dev/null
+	@echo "    [Z64] $@"		
+	$(N64_OBJCOPY) -O binary $(call FIXPATH,$<) $<.bin
+	$(RM) $(call FIXPATH,$@) $(SENDNULL)
+#	@echo $(N64_TOOL) $(N64_TOOLFLAGS) --output $@ $(call FIXPATH,$<.bin) --offset $(N64_DFS_OFFSET) $(filter %.dfs, $^)	
+	$(N64_TOOL) $(N64_TOOLFLAGS) --output $@ $(call FIXPATH,$<.bin) --offset $(N64_DFS_OFFSET) $(filter %.dfs, $^)	
+	@echo end copy
+#	DFS_FILE="$(filter %.dfs, $^)"; \
+#	if [ -z "$$DFS_FILE" ]; then \
+#		$(N64_TOOL) $(N64_TOOLFLAGS) --output $@ $<.bin; \
+#	else \
+#		$(N64_TOOL) $(N64_TOOLFLAGS) --output $@ $<.bin --offset $(N64_DFS_OFFSET) "$$DFS_FILE"; \
+#	fi
+#	if [ ! -z "$(strip $(N64_ED64ROMCONFIGFLAGS))" ]; then \
+#		$(N64_ED64ROMCONFIG) $(N64_ED64ROMCONFIGFLAGS) $@; \
+#	fi
+	@echo $(N64_CHKSUM) $(call FIXPATH,$@) $(SENDNULL)
+	$(N64_CHKSUM) $(call FIXPATH,$@) $(SENDNULL)
 
 %.v64: %.z64
 	@echo "    [V64] $@"
@@ -92,7 +96,7 @@ N64_CFLAGS += -std=gnu99
 %.dfs:
 	@mkdir -p $(dir $@)
 	@echo "    [DFS] $@"
-	$(N64_MKDFS) $@ $(<D) >/dev/null
+	$(N64_MKDFS) $@ $(<D) $(SENDNULL)
 
 $(BUILD_DIR)/rsp%.o: $(SOURCE_DIR)/rsp%.S $(SOURCE_DIR)\rsp%.S
 	@$(MD) $(call FIXPATH,$(dir $@)) $(SENDNULL)	
@@ -170,15 +174,18 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@$(MD) $(call FIXPATH,$(dir $@)) $(SENDNULL)
 	@echo "    [CXX] $<"
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) -o $(call FIXPATH,$@) $(call FIXPATH,$<)
 
-%.elf: $(N64_LIBDIR)/libdragon.a $(N64_LIBDIR)/libdragonsys.a $(N64_LIBDIR)/n64.ld
+%.elf: $(N64_LIBDIR)/libdragon.a $(N64_LIBDIR)/libdragonsys.a $(N64_LIBDIR)/n64.ld 
 	@$(MD) $(call FIXPATH,$(dir $@)) $(SENDNULL)
-	@echo "    [LD] $@"
+	@echo "    [LD] $@"	
 # We always use g++ to link except for ucode because of the inconsistencies
 # between ld when it comes to global ctors dtors. Also see __do_global_ctors
-	$(CXX) -o $@ $(filter-out $(N64_LIBDIR)/n64.ld,$^) -lc $(patsubst %,-Wl$(COMMA)%,$(LDFLAGS)) -Wl,-Map=$(BUILD_DIR)/$(notdir $(basename $@)).map
-	$(N64_SIZE) -G $@
+#	@echo $(LDFLAGS)
+#	@echo $(CXX) -o $(call FIXPATH,$@) $(call FIXPATH,$(filter-out $(N64_LIBDIR)/n64.ld,$^)) -lc $(patsubst %,-Wl$(COMMA)%,$(LDFLAGS)) -Wl,-Map=$(call FIXPATH,$(BUILD_DIR)/$(notdir $(basename $@))).map
+	$(CXX) -o $(call FIXPATH,$@) $(call FIXPATH,$(filter-out $(N64_LIBDIR)/n64.ld,$^)) -lc $(patsubst %,-Wl$(COMMA)%,$(LDFLAGS)) -Wl,-Map=$(call FIXPATH,$(BUILD_DIR)/$(notdir $(basename $@))).map
+#	@echo $(N64_SIZE) -G $(call FIXPATH,$@)
+	$(N64_SIZE) -G $(call FIXPATH,$@)
 
 ifneq ($(V),1)
 .SILENT:

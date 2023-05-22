@@ -1,3 +1,10 @@
+ifdef SystemRoot
+include $(N64_INST)\include\crossplatform.mk
+else
+include $(N64_INST)/include/crossplatform.mk
+endif
+
+
 PROG_NAME = mptest
 
 ROOTDIR = $(N64_INST)
@@ -14,6 +21,7 @@ ASFLAGS = -mtune=vr4300 -march=vr4300
 CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O2 -Wall -Werror -I$(ROOTDIR)/mips64-elf/include
 LDFLAGS = -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 1M -h $(ROOTDIR)/mips64-elf/lib/header -t "Mempak Test"
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 ifeq ($(N64_BYTE_SWAP),true)
 $(PROG_NAME).v64: $(PROG_NAME).z64
@@ -28,8 +36,9 @@ $(PROG_NAME).bin: $(PROG_NAME).elf
 	$(OBJCOPY) $< $@ -O binary
 
 $(PROG_NAME).elf: $(PROG_NAME).o
-	$(LD) -o $@ $^ $(LDFLAGS)
+	@echo $(LD) -o $(call FIXPATH,$@) $^ $(LDFLAGS)
+	$(LD) -o $(call FIXPATH,$@) $^ $(LDFLAGS)
 
 .PHONY: clean
 clean:
-	rm -f *.v64 *.z64 *.bin *.elf *.o
+	$(RM) *.v64 *.z64 *.bin *.elf *.o

@@ -4,7 +4,6 @@ include $(N64_INST)\include\crossplatform.mk
 else
 include $(N64_INST)/include/crossplatform.mk
 endif
-include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 OBJS = $(BUILD_DIR)/audioplayer.o
 
@@ -19,26 +18,28 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_xm1:%.xm=%.xm64))) \
 
 AUDIOCONV_FLAGS ?=
 
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
+
 all: audioplayer.z64
 
 # Run audioconv64 on all XM/YM files under assets/
 # We do this file by file, but we could even do it just once for the whole
 # directory, because audioconv64 supports directory walking.
 filesystem/%.xm64: assets/%.xm
-	@mkdir -p $(dir $@)
+	$(MD) $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem "$<"
 filesystem/%.xm64: assets/%.XM
-	@mkdir -p $(dir $@)
+	$(MD) $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem "$<"
 
 filesystem/%.ym64: assets/%.ym
-	@mkdir -p $(dir $@)
+	$(MD) $(dir $@)
 	@echo "    [AUDIO] $@"
 	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem "$<"
 filesystem/%.ym64: assets/%.YM
-	@mkdir -p $(dir $@)
+	$(MD) $(dir $@)
 	@echo "    [AUDIO] $@"
 	$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem "$<"
 

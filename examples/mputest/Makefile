@@ -1,3 +1,10 @@
+ifdef SystemRoot
+include $(N64_INST)\include\crossplatform.mk
+else
+include $(N64_INST)/include/crossplatform.mk
+endif
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
+
 PROG_NAME = mputest
 
 ROOTDIR = $(N64_INST)
@@ -32,4 +39,4 @@ $(PROG_NAME).elf: $(PROG_NAME).o
 
 .PHONY: clean
 clean:
-	rm -f *.v64 *.z64 *.bin *.elf *.o
+	$(RM) *.v64 *.z64 *.bin *.elf *.o

@@ -1,5 +1,11 @@
+ifdef SystemRoot
+include $(N64_INST)\include\crossplatform.mk
+else
+include $(N64_INST)/include/crossplatform.mk
+endif
+
 BUILD_DIR=build
-include $(N64_INST)/include/n64.mk
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 all: rspqdemo.z64
 
@@ -8,7 +14,7 @@ $(BUILD_DIR)/rspqdemo.elf: $(BUILD_DIR)/rspqdemo.o $(BUILD_DIR)/rsp_vec.o $(BUIL
 rspqdemo.z64: N64_ROM_TITLE="RSPQ Demo"
 
 clean:
-	rm -rf $(BUILD_DIR) rspqdemo.z64
+	$(RM) $(BUILD_DIR) rspqdemo.z64
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 

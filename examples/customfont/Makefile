@@ -1,8 +1,14 @@
+ifdef SystemRoot
+include $(N64_INST)\include\crossplatform.mk
+else
+include $(N64_INST)/include/crossplatform.mk
+endif
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
+
 all: customfont.z64
 .PHONY: all
 
 BUILD_DIR = build
-include $(N64_INST)/include/n64.mk
 
 SRC = customfont.c
 OBJS = $(SRC:%.c=$(BUILD_DIR)/%.o)
@@ -18,7 +24,7 @@ $(BUILD_DIR)/customfont.dfs: $(wildcard filesystem/*)
 $(BUILD_DIR)/customfont.elf: $(OBJS)
 
 clean:
-	rm -rf $(BUILD_DIR) *.z64
+	$(RM) $(BUILD_DIR) *.z64
 .PHONY: clean
 
 -include $(DEPS)

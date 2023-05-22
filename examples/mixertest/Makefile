@@ -1,5 +1,11 @@
+ifdef SystemRoot
+include $(N64_INST)\include\crossplatform.mk
+else
+include $(N64_INST)/include/crossplatform.mk
+endif
+
 BUILD_DIR=build
-include $(N64_INST)/include/n64.mk
+include $(call FIXPATH,$(N64_INST)/include/n64.mk)
 
 OBJS = $(BUILD_DIR)/mixertest.o
 
@@ -12,7 +18,7 @@ all: mixertest.z64
 # We do this file by file, but we could even do it just once for the whole
 # directory, because audioconv64 supports directory walking.
 filesystem/%.wav64: assets/%.wav
-	@mkdir -p $(dir $@)
+	$(MD) -p $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) -o filesystem $<
 
@@ -23,7 +29,7 @@ mixertest.z64: N64_ROM_TITLE="Mixer Test"
 mixertest.z64: $(BUILD_DIR)/mixertest.dfs
 
 clean:
-	rm -f $(BUILD_DIR)/* mixertest.z64 $(assets_conv)
+	$(RM) $(BUILD_DIR)/* mixertest.z64 $(assets_conv)
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 
